@@ -11,6 +11,7 @@ import json
 
 #à faire 
 # mettre le contenu du json dans un fichier toml (comme dans le projet pdf_to_quiz)
+#faire un commmit pour voir si ça marche
 
 clientOpenAI = OpenAI()
 
