@@ -5,14 +5,17 @@ import sys
 import subprocess
 import sys
 
-try:
-    import google.cloud
-except ModuleNotFoundError:
-    subprocess.call(["pip", "install", "google-cloud-vision"])  # Replace with the specific library you need
+import subprocess
+import sys
 
-    # Add this line to handle potential compatibility issues
-    if 'google.cloud' not in sys.modules:
-        import google.cloud  # Explicitly import after installation
+try:
+  import google.cloud
+except ModuleNotFoundError:
+  subprocess.call(["pip", "install", "google-cloud-vision"])  # Replace with the specific library you need
+
+# **Import google.cloud only after potential installation**
+if 'google.cloud' not in sys.modules:
+  import google.cloud
 
 
 from google.cloud import vision_v1
