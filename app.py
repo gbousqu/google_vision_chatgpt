@@ -1,5 +1,12 @@
 import streamlit as st
 
+import pip
+
+try:
+    import google.cloud
+except ModuleNotFoundError:
+    pip.install('google-cloud-vision')  # Remplacez par la bibliothèque spécifique dont vous avez besoin
+
 from google.cloud import vision_v1
 
 from google.oauth2 import service_account
