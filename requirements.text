@@ -1,5 +1,6 @@
 streamlit
 google-cloud-vision
+google-cloud
 openai
 google-auth
 google-auth-oauthlib
