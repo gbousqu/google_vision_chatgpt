@@ -142,6 +142,23 @@ if uploaded_file is not None:
         if 'corrected_text' in st.session_state:
             corrected_text = st.session_state['corrected_text']
 
+            
+            if st.button('Lancer la synthèse vocale'):
+                # Synthèse vocale du texte corrigé
+                voice = texttospeech.VoiceSelectionParams(
+                    language_code="fr-FR", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+                )
+                audio_config = texttospeech.AudioConfig(
+                    audio_encoding=texttospeech.AudioEncoding.MP3
+                )
+                clientTextToSpeech = texttospeech.TextToSpeechClient(credentials=credentials)
+                synthesis_input = texttospeech.SynthesisInput(text=corrected_text)
+                response = clientTextToSpeech.synthesize_speech(
+                    input=synthesis_input, voice=voice, audio_config=audio_config
+                )
+                # Affiche un lecteur audio dans la page web qui joue le fichier MP3
+                st.audio(response.audio_content, format='audio/mp3')
+
             num_lines = len(corrected_text) // 50
             height_in_px = num_lines * 24
             css = f'''
@@ -163,19 +180,4 @@ if uploaded_file is not None:
             if uploaded_file is not None:
                 col2.image(uploaded_file, caption='Image téléchargée.')
 
-            if st.button('Lancer la synthèse vocale'):
-                # Synthèse vocale du texte corrigé
-                voice = texttospeech.VoiceSelectionParams(
-                    language_code="fr-FR", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-                )
-                audio_config = texttospeech.AudioConfig(
-                    audio_encoding=texttospeech.AudioEncoding.MP3
-                )
-                clientTextToSpeech = texttospeech.TextToSpeechClient(credentials=credentials)
-                synthesis_input = texttospeech.SynthesisInput(text=corrected_text)
-                response = clientTextToSpeech.synthesize_speech(
-                    input=synthesis_input, voice=voice, audio_config=audio_config
-                )
-                # Affiche un lecteur audio dans la page web qui joue le fichier MP3
-                st.audio(response.audio_content, format='audio/mp3')
 
