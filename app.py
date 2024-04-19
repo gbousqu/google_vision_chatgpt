@@ -114,7 +114,7 @@ if uploaded_file is not None:
         st.text_area('texte lu par Google Vision Cloud', value=detected_text)
 
         system_content = st.text_area('Entrez le contenu du rôle système ici', value="Tu es un correcteur professionnel, qui corrige des textes provenant d'OCR.")
-        user_content = st.text_area('Entrez le contenu du rôle utilisateur ici', value=f"corrige  l'orthographe du texte, en priorité les mots encadrés par des crochets.  Evite au maximum de remplacer les mots non encadrés. Respecte les mots et la syntaxe caractéristiques d'un texte de 1920. Aère le texte en paragraphes. Renvoie uniquement le texte corrigé, sans explication")
+        user_content = st.text_area('Entrez le contenu du rôle utilisateur ici', value=f"corrige  l'orthographe du texte. Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  Assure-toi que chaque mot et chaque phrase ait un sens. Aère le texte en paragraphes. Renvoie uniquement le texte corrigé, sans explication")
         user_content = user_content + ' Texte à corriger :' + st.session_state['detected_text']
 
         if st.button('Lancer le traitement par GPT'):
