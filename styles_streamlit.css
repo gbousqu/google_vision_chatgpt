@@ -3,5 +3,5 @@
 } */
 
 div[data-testid="stAppViewBlockContainer"] {
-  max-width: 60rem important!;
+  max-width: 60rem !important;
 }
