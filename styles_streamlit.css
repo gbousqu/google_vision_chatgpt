@@ -10,6 +10,6 @@ div:contains("téléchargée") > div > div {
   justify-content: center !important;
 }
 
-div:contains("téléchargée") {
-  background-color: red !important;
+div[data-testid="stImageCaption"]:contains("téléchargée") {
+  background-color: red;
 }

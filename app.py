@@ -14,6 +14,7 @@ import os
 from openai import OpenAI
 from google.cloud import texttospeech
 import json
+import base64
 
 #à faire 
 # mettre le contenu du json dans un fichier toml (comme dans le projet pdf_to_quiz)
@@ -50,7 +51,15 @@ clientGoogleVision = vision_v1.ImageAnnotatorClient(credentials=credentials)
 uploaded_file = st.file_uploader("Choisissez une image avec du texte à transcrire", type=["jpg", "jpeg","png"])
 
 if uploaded_file is not None:
-    st.image(uploaded_file, caption='Image téléchargée.')
+    # st.image(uploaded_file, caption='Image téléchargée.')
+        # Convertit l'image téléchargée en base64 pour l'insérer dans le HTML
+    image_base64 = base64.b64encode(uploaded_file.getvalue()).decode()
+
+    # Insère l'image dans un bloc HTML avec des styles CSS
+    st.markdown(
+        f'<div style="display: flex; justify-content: center;"><img src="data:image/png;base64,{image_base64}" style="max-width: 100%; height: auto;"></div>',
+        unsafe_allow_html=True,
+    )
 
     if 'confidence_threshold' not in st.session_state:
         st.session_state.confidence_threshold = 0.8
