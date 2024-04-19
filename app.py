@@ -136,16 +136,28 @@ if uploaded_file is not None:
         if 'corrected_text' in st.session_state:
             corrected_text = st.session_state['corrected_text']
 
-            num_lines = len(corrected_text) // 60
-            height_in_px = num_lines * 24
-            css = f'''
-            <style>
-                .stTextArea textarea[aria-label='texte corrigé par GPT'] {{
-                height: {height_in_px}px;
-                }}
-            </style>
-            '''
-            st.write(css, unsafe_allow_html=True) 
+            # num_lines = len(corrected_text) // 60
+            # height_in_px = num_lines * 24
+            # css = f'''
+            # <style>
+            #     .stTextArea textarea[aria-label='texte corrigé par GPT'] {{
+            #     height: {height_in_px}px;
+            #     }}
+            # </style>
+            # '''
+            # st.write(css, unsafe_allow_html=True) 
+
+             # Crée deux colonnes
+            col1, col2 = st.beta_columns(2)
+
+            # Affiche le texte corrigé dans la première colonne
+            col1.text_area('texte corrigé par GPT', value=corrected_text)
+
+            # Affiche l'image dans la deuxième colonne
+            if uploaded_file is not None:
+                col2.image(uploaded_file, caption='Image téléchargée.')
+
+
             st.text_area('texte corrigé par GPT', value=corrected_text)
             if st.button('Lancer la synthèse vocale'):
                 # Synthèse vocale du texte corrigé
