@@ -111,9 +111,8 @@ if uploaded_file is not None:
         css = f'''
         <style>
             .stTextArea textarea[aria-label='texte lu par Google Vision Cloud'] {{
-                height: {height_in_px}px;
-                width:70%;
-                
+                height: {height_in_px}px;   
+                width:100%;           
             }}
         </style>
         '''
