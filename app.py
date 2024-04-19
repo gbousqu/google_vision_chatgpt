@@ -157,14 +157,12 @@ if uploaded_file is not None:
             col1, col2 = st.columns(2)
 
             # Affiche le texte corrigé dans la première colonne
-            col1.text_area('texte corrigé par GPT', value=corrected_text)
+            col1.text_area('texte corrigé par GPT', value=corrected_text,key='texte corrigé par GPT')
 
             # Affiche l'image dans la deuxième colonne
             if uploaded_file is not None:
                 col2.image(uploaded_file, caption='Image téléchargée.')
 
-
-            st.text_area('texte corrigé par GPT', value=corrected_text,key='texte corrigé par GPT')
             if st.button('Lancer la synthèse vocale'):
                 # Synthèse vocale du texte corrigé
                 voice = texttospeech.VoiceSelectionParams(
