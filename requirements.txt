@@ -2,5 +2,6 @@ streamlit
 google-cloud-vision
 openai
 google-auth
+googl-cloud-texttospeech
 
 
