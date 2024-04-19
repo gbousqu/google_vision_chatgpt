@@ -74,7 +74,7 @@ if uploaded_file is not None:
     # Crée un contexte d'image avec la langue "fr" (français)
     image_context = vision_v1.ImageContext(language_hints=["fr"])
 
-    if st.button('Lancer la détection de texte'):
+    if st.button('Lancer la transcription par Google Vision'):
         # Appelle l'API Google Vision pour détecter le texte dans l'image
         response = clientGoogleVision.document_text_detection(image=image)
 
