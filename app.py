@@ -50,7 +50,7 @@ clientGoogleVision = vision_v1.ImageAnnotatorClient(credentials=credentials)
 uploaded_file = st.file_uploader("Choisissez une image avec du texte à transcrire", type=["jpg", "jpeg","png"])
 
 if uploaded_file is not None:
-    st.image(uploaded_file, caption='Image téléchargée.',key='uploaded_image')
+    st.image(uploaded_file, caption='Image téléchargée.')
 
     if 'confidence_threshold' not in st.session_state:
         st.session_state.confidence_threshold = 0.8
