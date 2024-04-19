@@ -64,7 +64,7 @@ if uploaded_file is not None:
     if 'confidence_threshold' not in st.session_state:
         st.session_state.confidence_threshold = 0.8
 
-    confidence_threshold = st.slider("Choisissez le seuil de confiance", 0.0, 1.0, st.session_state.confidence_threshold)
+    confidence_threshold = st.slider("Visualisez les mots incertains en choisissant un seuil de confiance", 0.0, 1.0, st.session_state.confidence_threshold)
 
     st.session_state.confidence_threshold = confidence_threshold
 
@@ -153,7 +153,7 @@ if uploaded_file is not None:
             corrected_text = st.session_state['corrected_text']
 
             
-            if st.button('Lancer la synthèse vocale'):
+            if st.button('Générer la synthèse vocale'):
                 # Synthèse vocale du texte corrigé
                 voice = texttospeech.VoiceSelectionParams(
                     language_code="fr-FR", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
