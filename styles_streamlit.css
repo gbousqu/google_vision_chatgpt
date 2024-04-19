@@ -1,7 +1,7 @@
 div[data-testid="stVerticalBlock"] {
-  width: 80%;
+  width: 80% important!;
 }
 
 div[data-testid="stAppViewBlockContainer"] {
-  max-width: 1000px;
+  max-width: 1000px important!;
 }
