@@ -19,11 +19,11 @@ import json
 # mettre le contenu du json dans un fichier toml (comme dans le projet pdf_to_quiz)
 #tester la version sur share.streamit.io
 
-clientOpenAI = OpenAI()
-
 st.markdown('[Obtenir une clé API OpenAI](https://platform.openai.com/api-keys)', unsafe_allow_html=True)
 openai_api_key = st.text_input("Entrez votre clé OpenAI", type="password")
 os.environ['OPENAI_API_KEY'] = openai_api_key
+if openai_api_key:
+    clientOpenAI = OpenAI()
 
 st.title('OCR : google vision + GPT')
 
