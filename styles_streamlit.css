@@ -11,5 +11,5 @@ div:contains("téléchargée") > div > div {
 }
 
 div:contains("téléchargée") {
-  background-color: red;
+  background-color: red !important;
 }
