@@ -148,7 +148,7 @@ if uploaded_file is not None:
             # st.write(css, unsafe_allow_html=True) 
 
              # Crée deux colonnes
-            col1, col2 = st.beta_columns(2)
+            col1, col2 = st.columns(2)
 
             # Affiche le texte corrigé dans la première colonne
             col1.text_area('texte corrigé par GPT', value=corrected_text)
