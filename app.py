@@ -148,6 +148,7 @@ if uploaded_file is not None:
             <style>
                 .stTextArea textarea[aria-label='texte corrigé par GPT'] {{
                 height: {height_in_px}px;
+                width: 60%;
                 }}
             </style>
             '''
