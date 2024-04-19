@@ -5,3 +5,7 @@
 div[data-testid="stAppViewBlockContainer"] {
   max-width: 60rem !important;
 }
+
+div:contains("Image téléchargée.") > div > div {
+  justify-content: center;
+}
