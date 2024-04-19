@@ -166,8 +166,11 @@ if uploaded_file is not None:
                 response = clientTextToSpeech.synthesize_speech(
                     input=synthesis_input, voice=voice, audio_config=audio_config
                 )
-                # Affiche un lecteur audio dans la page web qui joue le fichier MP3
-                st.audio(response.audio_content, format='audio/mp3')
+                # Stocke l'audio dans st.session_state
+                st.session_state['audio'] = response.audio_content
+            # Affiche un lecteur audio dans la page web qui joue le fichier MP3
+            if 'audio' in st.session_state:
+                st.audio(st.session_state['audio'], format='audio/mp3')
 
             num_lines = len(corrected_text) // 50
             height_in_px = num_lines * 24
