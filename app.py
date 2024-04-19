@@ -25,6 +25,12 @@ os.environ['OPENAI_API_KEY'] = openai_api_key
 if openai_api_key:
     clientOpenAI = OpenAI()
 
+# Lire le contenu du fichier CSS
+with open('styles_streamlit.css', 'r') as f:
+    css = f.read()
+# Inclure le CSS dans le script Streamlit
+st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+
 st.title('OCR : google vision + GPT')
 
 # # Chemin vers votre fichier de clés de service JSON
