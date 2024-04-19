@@ -142,13 +142,12 @@ if uploaded_file is not None:
         if 'corrected_text' in st.session_state:
             corrected_text = st.session_state['corrected_text']
 
-            num_lines = len(corrected_text) // 60
+            num_lines = len(corrected_text) // 50
             height_in_px = num_lines * 24
             css = f'''
             <style>
                 .stTextArea textarea[aria-label='texte corrigé par GPT'] {{
-                height: {height_in_px}px;
-                width: 60%;
+                height: {height_in_px}px;                
                 }}
             </style>
             '''
