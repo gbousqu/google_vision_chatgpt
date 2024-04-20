@@ -51,6 +51,10 @@ clientGoogleVision = vision_v1.ImageAnnotatorClient(credentials=credentials)
 uploaded_file = st.file_uploader("Choisissez une image avec du texte à transcrire", type=["jpg", "jpeg","png"])
 
 if uploaded_file is not None:
+
+    # Retire 'detected_text' de st.session_state
+    st.session_state.pop('detected_text', None)
+    
     # st.image(uploaded_file, caption='Image téléchargée.')
         # Convertit l'image téléchargée en base64 pour l'insérer dans le HTML
     image_base64 = base64.b64encode(uploaded_file.getvalue()).decode()
@@ -108,8 +112,10 @@ if uploaded_file is not None:
                             detected_text += " "
 
         st.session_state['detected_text'] = detected_text
+        
 
     if 'detected_text' in st.session_state:
+
         detected_text = st.session_state['detected_text']
         # Compte le nombre de lignes dans detected_text
         num_lines =detected_text.count('\n') + len(detected_text) // 80  
@@ -150,6 +156,7 @@ if uploaded_file is not None:
 
 
         if 'corrected_text' in st.session_state:
+
             corrected_text = st.session_state['corrected_text']
 
             
