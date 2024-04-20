@@ -54,7 +54,8 @@ if uploaded_file is not None:
 
     # Retire 'detected_text' de st.session_state
     st.session_state.pop('detected_text', None)
-    
+    st.session_stage.pop('corrected_text', None)
+
     # st.image(uploaded_file, caption='Image téléchargée.')
         # Convertit l'image téléchargée en base64 pour l'insérer dans le HTML
     image_base64 = base64.b64encode(uploaded_file.getvalue()).decode()
