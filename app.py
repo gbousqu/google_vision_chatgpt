@@ -16,9 +16,24 @@ from google.cloud import texttospeech
 import json
 import base64
 
+
+
 #à faire 
 # mettre le contenu du json dans un fichier toml (comme dans le projet pdf_to_quiz)
 #tester la version sur share.streamit.io
+
+if 'detected_text' not in st.session_state:
+    st.session_state['detected_text'] = ""
+
+if 'corrected_text' not in st.session_state:
+    st.session_state['corrected_text'] = ""
+
+def affiche_session_state():
+    print("detected_text : ", len(st.session_state['detected_text']))
+    print("corrected_text : ", len(st.session_state['corrected_text']))
+    print("####################")
+
+
 
 st.markdown('[Obtenir une clé API OpenAI](https://platform.openai.com/api-keys)', unsafe_allow_html=True)
 openai_api_key = st.text_input("Entrez votre clé OpenAI", type="password")
@@ -50,11 +65,18 @@ clientGoogleVision = vision_v1.ImageAnnotatorClient(credentials=credentials)
 
 uploaded_file = st.file_uploader("Choisissez une image avec du texte à transcrire", type=["jpg", "jpeg","png"])
 
+#print("avant affichage uploaded_file");affiche_session_state()
+
 if uploaded_file is not None:
 
-    # Retire 'detected_text' de st.session_state
-    st.session_state.pop('detected_text', None)
-    st.session_state.pop('corrected_text', None)
+ # Si le fichier précédemment téléchargé est différent du fichier actuellement téléchargé
+    if 'last_uploaded_file' not in st.session_state or st.session_state['last_uploaded_file'] != uploaded_file.getvalue():
+        #print(f"on vient de charger une image")
+        st.session_state['detected_text'] = ""
+        st.session_state['corrected_text'] = ""
+        st.session_state['last_uploaded_file'] = uploaded_file.getvalue()
+
+    #print("uploaded_file is not none");affiche_session_state()
 
     # st.image(uploaded_file, caption='Image téléchargée.')
         # Convertit l'image téléchargée en base64 pour l'insérer dans le HTML
@@ -79,13 +101,13 @@ if uploaded_file is not None:
     # Crée un contexte d'image avec la langue "fr" (français)
     image_context = vision_v1.ImageContext(language_hints=["fr"])
 
+
     if st.button('Lancer la transcription par Google Vision'):
         # Appelle l'API Google Vision pour détecter le texte dans l'image
         response = clientGoogleVision.document_text_detection(image=image)
 
         # Initialise le texte
         detected_text = ""
-
 
         # Parcourt chaque page dans la réponse
         for page in response.full_text_annotation.pages:
@@ -113,10 +135,11 @@ if uploaded_file is not None:
                             detected_text += " "
 
         st.session_state['detected_text'] = detected_text
-        
 
-    if 'detected_text' in st.session_state:
+    print("avant affichage textarea detected_text");affiche_session_state()
 
+    if st.session_state['detected_text'] !="":
+        #on récupère la dernière version du texte détecté (éventuellement modifié par l'utilisateur)
         detected_text = st.session_state['detected_text']
         # Compte le nombre de lignes dans detected_text
         num_lines =detected_text.count('\n') + len(detected_text) // 80  
@@ -134,15 +157,24 @@ if uploaded_file is not None:
         </style>
         '''
         st.write(css, unsafe_allow_html=True) 
-        st.text_area('texte lu par Google Vision Cloud', value=detected_text)
+        st.text_area('texte lu par Google Vision Cloud', key='detected_text')
 
         system_content = st.text_area('Entrez le contenu du rôle système ici', value="Tu es un correcteur professionnel, qui corrige des textes provenant d'OCR.")
         user_content = st.text_area('Entrez le contenu du rôle utilisateur ici', value=f"corrige  l'orthographe du texte. Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  Assure-toi que chaque mot et chaque phrase ait un sens.  Conserve les 'deux points' (:) quand tu en trouves. Vérifie une dernière fois tout le texte pour corriger les mots qui n'auraient pas de sens dans la phrase. Pour finir, Aère le texte en paragraphes et  Renvoie uniquement le texte corrigé, sans explication")
-        user_content = user_content + ' Texte à corriger :' + st.session_state['detected_text']
+
+        #print("avant affichage éventuel du bouton GPT");affiche_session_state()
 
         if st.button('Lancer le traitement par GPT'):
             #on vient juste d'appuyer sur le bouton : on corrige le texte avec GPT  
                 # Utilise GPT-3 pour corriger le texte lu par google vision
+
+            #print("avant affichage textarea corrected_text");affiche_session_state()
+
+            #on utilise la dernière version du text_area "detected_text" pour corriger le texte, dans le cas où l'utilisateur aurait modifié le texte
+            detected_text = st.session_state['detected_text']
+
+            user_content = user_content + ' Texte à corriger :' + detected_text
+
             completion = clientOpenAI.chat.completions.create(
                 # model="gpt-3.5-turbo",
                 model="gpt-3.5-turbo-0125",
@@ -155,13 +187,18 @@ if uploaded_file is not None:
             #on mémorise le texte corrigé
             st.session_state['corrected_text'] = corrected_text
 
+        #print("avant affichage éventuel du bouton synthèse vocale");affiche_session_state()
 
-        if 'corrected_text' in st.session_state:
+
+        if st.session_state['corrected_text'] !="":
 
             corrected_text = st.session_state['corrected_text']
-
             
             if st.button('Générer la synthèse vocale'):
+
+                #on vient juste d'appuyer sur le bouton : on génère la synthèse vocale du texte corrigé, en utilisant la dernière version du texte corrigé
+                corrected_text = st.session_state['corrected_text']
+
                 # Synthèse vocale du texte corrigé
                 voice = texttospeech.VoiceSelectionParams(
                     language_code="fr-FR", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
@@ -195,7 +232,7 @@ if uploaded_file is not None:
             col1, col2 = st.columns(2)
 
             # Affiche le texte corrigé dans la première colonne
-            col1.text_area('texte corrigé par GPT', value=corrected_text,key='texte corrigé par GPT')
+            col1.text_area('texte corrigé par GPT', value=corrected_text,key='corrected_text')
 
             # Affiche l'image dans la deuxième colonne
             if uploaded_file is not None:
