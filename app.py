@@ -165,9 +165,12 @@ if uploaded_file is not None:
         system_content = st.text_area('Entrez le contenu du rôle système ici', value="Tu es un correcteur professionnel, qui corrige des textes provenant d'OCR.")
 
         consigne = f"""corrige  l'orthographe du texte. Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  Assure-toi que chaque mot et chaque phrase ait un sens.
-        Conserve les 'deux points' (:) et les guillemets du texte original.
+        Conserve les 'deux points' (:), les accents, les tirets et les guillemets du texte original.
         Vérifie une dernière fois tout le texte pour corriger les mots qui n'auraient pas de sens dans la phrase.        
-        Pour finir, enlève les crochets restants, Aère le texte en paragraphes et  renvoie uniquement le texte corrigé, sans explication"""
+        Ensuite enlève les crochets restants,.
+        Aère le texte en créant des paragraphes distincts.
+        renvoie uniquement le texte corrigé, sans explication
+"""
 
         # consigne = f"""corrige ce texte en remplaçant systèmatiquement tous les mots entre crochets et en recopiant sans modification les autres mots
         # exemples : 
