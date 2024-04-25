@@ -215,29 +215,6 @@ if uploaded_file is not None:
         if st.session_state['corrected_text'] !="":
 
             corrected_text = st.session_state['corrected_text']
-            
-            if st.button('Générer la synthèse vocale'):
-
-                #on vient juste d'appuyer sur le bouton : on génère la synthèse vocale du texte corrigé, en utilisant la dernière version du texte corrigé
-                corrected_text = st.session_state['corrected_text']
-
-                # Synthèse vocale du texte corrigé
-                voice = texttospeech.VoiceSelectionParams(
-                    language_code="fr-FR", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-                )
-                audio_config = texttospeech.AudioConfig(
-                    audio_encoding=texttospeech.AudioEncoding.MP3
-                )
-                clientTextToSpeech = texttospeech.TextToSpeechClient(credentials=credentials)
-                synthesis_input = texttospeech.SynthesisInput(text=corrected_text)
-                response = clientTextToSpeech.synthesize_speech(
-                    input=synthesis_input, voice=voice, audio_config=audio_config
-                )
-                # Stocke l'audio dans st.session_state
-                st.session_state['audio'] = response.audio_content
-            # Affiche un lecteur audio dans la page web qui joue le fichier MP3
-            if 'audio' in st.session_state:
-                st.audio(st.session_state['audio'], format='audio/mp3')
 
             num_lines = len(corrected_text) // 50
             height_in_px = num_lines * 24
@@ -259,5 +236,30 @@ if uploaded_file is not None:
             # Affiche l'image dans la deuxième colonne
             if uploaded_file is not None:
                 col2.image(uploaded_file, caption='Image téléchargée.')
+            
+            if st.button('Générer la synthèse vocale'):
+
+                #on vient juste d'appuyer sur le bouton : on génère la synthèse vocale du texte corrigé, en utilisant la dernière version du texte corrigé
+
+                # Synthèse vocale du texte corrigé
+                voice = texttospeech.VoiceSelectionParams(
+                    language_code="fr-FR", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+                )
+                audio_config = texttospeech.AudioConfig(
+                    audio_encoding=texttospeech.AudioEncoding.MP3
+                )
+                clientTextToSpeech = texttospeech.TextToSpeechClient(credentials=credentials)
+                synthesis_input = texttospeech.SynthesisInput(text=corrected_text)
+                response = clientTextToSpeech.synthesize_speech(
+                    input=synthesis_input, voice=voice, audio_config=audio_config
+                )
+                # Stocke l'audio dans st.session_state
+                st.session_state['audio'] = response.audio_content
+
+            # Affiche un lecteur audio dans la page web qui joue le fichier MP3
+            if 'audio' in st.session_state:
+                st.audio(st.session_state['audio'], format='audio/mp3')
+
+
 
 
