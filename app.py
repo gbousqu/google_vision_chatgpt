@@ -63,6 +63,9 @@ credentials = service_account.Credentials.from_service_account_info(service_acco
 # Initialise le client Vision avec les informations d'identification
 clientGoogleVision = vision_v1.ImageAnnotatorClient(credentials=credentials)
 
+# Crée un emplacement réservé pour l'image
+image_placeholder = st.empty()
+
 uploaded_file = st.file_uploader("Choisissez une image avec du texte à transcrire", type=["jpg", "jpeg","png"])
 
 #print("avant affichage uploaded_file");affiche_session_state()
@@ -82,9 +85,9 @@ if uploaded_file is not None:
         # Convertit l'image téléchargée en base64 pour l'insérer dans le HTML
     image_base64 = base64.b64encode(uploaded_file.getvalue()).decode()
 
-    # Insère l'image dans un bloc HTML avec des styles CSS
-    st.markdown(
-        f'<div style="display: flex; justify-content: center;"><img src="data:image/png;base64,{image_base64}" style="max-width: 100%; height: auto;"></div>',
+    # Affiche l'image dans l'emplacement réservé
+    image_placeholder.markdown(
+        f'<div style="display: flex; justify-content: center;"><img src="data:image/png;base64,{image_base64}" style="width: 20%;"></div>',
         unsafe_allow_html=True,
     )
 
@@ -160,7 +163,23 @@ if uploaded_file is not None:
         st.text_area('texte lu par Google Vision Cloud', key='detected_text')
 
         system_content = st.text_area('Entrez le contenu du rôle système ici', value="Tu es un correcteur professionnel, qui corrige des textes provenant d'OCR.")
-        user_content = st.text_area('Entrez le contenu du rôle utilisateur ici', value=f"corrige  l'orthographe du texte. Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  Assure-toi que chaque mot et chaque phrase ait un sens.  Conserve les 'deux points' (:) quand tu en trouves. Vérifie une dernière fois tout le texte pour corriger les mots qui n'auraient pas de sens dans la phrase. Pour finir, Aère le texte en paragraphes et  Renvoie uniquement le texte corrigé, sans explication")
+
+        consigne = f"""corrige  l'orthographe du texte. Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  Assure-toi que chaque mot et chaque phrase ait un sens.
+        Conserve les 'deux points' (:) et les guillemets du texte original.
+        Vérifie une dernière fois tout le texte pour corriger les mots qui n'auraient pas de sens dans la phrase.        
+        Pour finir, enlève les crochets restants, Aère le texte en paragraphes et  renvoie uniquement le texte corrigé, sans explication"""
+
+        # consigne = f"""corrige ce texte en remplaçant systèmatiquement tous les mots entre crochets et en recopiant sans modification les autres mots
+        # exemples : 
+        # - [féd] [rations] >> fédérations
+        # - et des [secrétaires] [,] [d] [oraleurs] [vodelles] [...] >> et des secrétaires, des orateurs vedettes
+        # -  que [suis] [-] [je] [eucure]  >> que sais-je encore
+        # - [I] [en] [va] [sou] [vent] [out] [autrement]  >> il en va souvent  tout autrement
+        # Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  
+        # Pour finir, Aère le texte en paragraphes et  Renvoie uniquement le texte corrigé, sans explication
+        # """
+
+        user_content = st.text_area('Entrez le contenu du rôle utilisateur ici', value=consigne)
 
         #print("avant affichage éventuel du bouton GPT");affiche_session_state()
 
