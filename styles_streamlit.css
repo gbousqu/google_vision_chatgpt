@@ -10,6 +10,18 @@ div:contains("téléchargée") > div > div {
   justify-content: center !important;
 }
 
-div[data-testid="stImageCaption"]:contains("téléchargée") {
+/* div[data-testid="stImageCaption"]:contains("téléchargée") {
   background-color: red;
+} */
+
+div.system_prompt,
+div.user_prompt {
+  border: grey solid 1px;
+  padding: 5px;
+  margin: 5px;
+}
+
+div.stMarkdown p {
+  font-size: 0.8em;
+  margin: 0;
 }
