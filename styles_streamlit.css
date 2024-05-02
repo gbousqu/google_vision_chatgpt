@@ -25,3 +25,14 @@ div.stMarkdown p {
   font-size: 0.8em;
   margin: 0;
 }
+
+/* div.action button p {
+  background-color: rgb(32, 64, 110);
+  color: white;
+} */
+
+button[kind="primary"] {
+  background-color: rgb(59, 125, 216);
+  color: white;
+  border: none;
+}
