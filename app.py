@@ -20,8 +20,11 @@ import base64
 import html
 import time
 
+from streamlit.components.v1 import html as st_html
 
 #à faire 
+#ajouter un système de tiroir javascript pour afficher la partie édition des prompts user/system
+#modifier la couleur des boutons d'action
 
 
 temps_d_attente = 2 #pour attendre que bigquery se mette à jour après modification, création, suppression de données et avant de recharger la page
@@ -145,7 +148,8 @@ else:
 
 
         #le bouton "lancer la transcription par Google Vision" est affiché si une image a été téléchargée
-        if st.button('Lancer la transcription par Google Vision'):
+
+        if st.button('Lancer la transcription par Google Vision', type='primary'):
             # Appelle l'API Google Vision pour détecter le texte dans l'image
             response = clientGoogleVision.document_text_detection(image=image)
 
@@ -203,28 +207,6 @@ else:
     st.write(css, unsafe_allow_html=True) 
     st.text_area('texte lu par Google Vision Cloud', key='detected_text')
 
-    # system_content = st.text_area('Entrez le contenu du rôle système ici', value="Tu es un correcteur professionnel, qui corrige des textes provenant d'OCR.")
-
-#     consigne = f"""corrige  l'orthographe du texte. Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  Assure-toi que chaque mot et chaque phrase ait un sens.
-#     Conserve les 'deux points' (:), les accents, les tirets et les guillemets du texte original.
-#     Vérifie une dernière fois tout le texte pour corriger les mots qui n'auraient pas de sens dans la phrase.        
-#     Ensuite enlève les crochets restants,.
-#     Aère le texte en créant des paragraphes distincts.
-#     renvoie uniquement le texte corrigé, sans explication
-# """
-
-    consigne = f"""corrige ce texte en remplaçant systèmatiquement tous les mots entre crochets et en recopiant sans modification les autres mots
-    exemples : 
-    - [féd] [rations] >> fédérations
-    - et des [secrétaires] [,] [d] [oraleurs] [vodelles] [...] >> et des secrétaires, des orateurs vedettes
-    -  que [suis] [-] [je] [eucure]  >> que sais-je encore
-    - [I] [en] [va] [sou] [vent] [out] [autrement]  >> il en va souvent  tout autrement
-    Respecte les mots et la syntaxe caractéristiques d'un texte de 1920.  
-    Pour finir, Aère le texte en paragraphes et  Renvoie uniquement le texte corrigé, sans explication
-    """
-
-    # user_content = st.text_area('Entrez le contenu du rôle utilisateur ici', value=consigne)
-
     ########################################################################################
     # choix du system_prompt (rôle) à utiliser pour l'appel à l'api OpenAI
     ########################################################################################
@@ -253,52 +235,168 @@ else:
     selected_system_prompt_description = selected_system_prompt['description']
     selected_system_prompt_visibility = selected_system_prompt['visibility']
 
-    if selected_system_prompt_user != username:
-        st.write("Ce system_prompt est en lecture seule, vous pouvez cliquer sur 'créer un nouveau system_prompt' pour en faire une copie éditable.")
-    else:
-        st.write("Créé par : ", selected_system_prompt_user)
-
-    st.write("Visibilité : ", selected_system_prompt_visibility)
-
-    if selected_system_prompt_description is not None:
-        selected_system_prompt_description = html.escape(selected_system_prompt_description)
-    st.markdown("Description du system_prompt sélectionné dans la liste:")
-    st.markdown(f'<div class="system_prompt" style="white-space: pre-wrap; margin-bottom:20px">{selected_system_prompt_description}</div>', unsafe_allow_html=True)
-
-
+    
     # Remplacer les caractères < et > par leurs entités HTML correspondantes
     selected_system_prompt_content = selected_system_prompt_content.replace('<', '&lt;').replace('>', '&gt;')
     # Remplacer \n par <br/> dans selected_system_prompt_content
     selected_system_prompt_content = selected_system_prompt_content.replace('\n', '<br/>')
 
     # Afficher le contenu du system_prompt sélectionné dans une zone de texte    
-    st.markdown("Contenu du system_prompt sélectionné dans la liste:")
+    # st.markdown("prompt system sélectionné:")
     st.markdown(f'<div class="system_prompt">{selected_system_prompt_content}</div>', unsafe_allow_html=True)
-    # st.markdown("---")
 
-    ########################################################################################
-    # Ajouter un bouton "Modifier le system_prompt"
-    if selected_system_prompt_user == username: #seul le créateur du system_prompt peut le modifier
-        if st.button('Modifier ce system_prompt', key='edit_above_system_prompt'):
+        # Initialise l'état d'affichage si ce n'est pas déjà fait
+    if 'show_system_prompt' not in st.session_state:
+        st.session_state['show_system_prompt'] = False
+
+    # Crée le bouton
+    if st.button('Affiche/Masque les détails', key='edit_system_prompt'):
+        # Inverse l'état d'affichage lorsque le bouton est cliqué
+        st.session_state['show_system_prompt'] = not st.session_state['show_system_prompt']
+
+    if st.session_state['show_system_prompt']:
+        if selected_system_prompt_user != username:
+            st.write("Ce system_prompt est en lecture seule, vous pouvez cliquer sur 'créer un nouveau system_prompt' pour en faire une copie éditable.")
+        else:
+            st.write("Créé par : ", selected_system_prompt_user)
+
+        st.write("Visibilité : ", selected_system_prompt_visibility)
+
+        if selected_system_prompt_description is not None:
+            selected_system_prompt_description = html.escape(selected_system_prompt_description)
+        st.markdown("Description du system_prompt sélectionné dans la liste:")
+        st.markdown(f'<div class="system_prompt" style="white-space: pre-wrap; margin-bottom:20px">{selected_system_prompt_description}</div>', unsafe_allow_html=True)
+
+        ########################################################################################
+        # Ajouter un bouton "Modifier le system_prompt"
+        if selected_system_prompt_user == username: #seul le créateur du system_prompt peut le modifier
+            if st.button('Modifier ce system_prompt', key='edit_above_system_prompt'):
+                #ce drapeau editing est utilisé pour qu'au rechargement de la page, le formulaire d'édition soit affiché
+                st.session_state['system_prompt_editing'] = True
+
+            if st.session_state.get('system_prompt_editing', False):  #false = valeur par défaut
+                # print("ouverture du formulaire d'édition du system_prompt sélectionné")
+
+                with st.form(key='edit_form_system_prompt'):
+
+                    # Ajouter un bouton "Enregistrer"
+                    system_prompt_save_button = st.form_submit_button('Enregistrer les modifications')
+
+                    # Ajouter un bouton "Annuler"
+                    system_prompt_cancel_button = st.form_submit_button('Fermer le formulaire sans enregistrer les modifications')
+
+                    # Ajouter un nouveau nom de system_prompt
+                    st.session_state['new_system_prompt_name'] = st.text_input('Modifier le nom du system_prompt', value=selected_system_prompt['name'], key='edit_system_prompt_name')
+
+                    #ajouter un choix de visibilité (public ou privé)
+                    st.session_state['new_system_prompt_visibility'] = st.radio("Visibilité du system_prompt", ("public", "private"), key='edit_modify_system_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_system_prompt['visibility']))
+
+                    #ajouter une description du system_prompt
+                    st.session_state['new_system_prompt_description'] = st.text_area('Description du system_prompt', value=selected_system_prompt['description'], key='edit_system_prompt_description',height=500)
+                    
+                    # Ajouter un nouveau contenu de system_prompt
+                    st.session_state['new_system_prompt_content'] = st.text_area('Modifier le system_prompt', value=selected_system_prompt['content'], key='edit_system_prompt_content', height=500)
+
+                
+                    ########################################################################################
+
+                    if system_prompt_cancel_button:
+                        # print("cancel edited system_prompt")
+                        st.session_state['system_prompt_editing'] = False
+                        st.experimental_rerun()
+
+                    # Sauvegarder les modifications apportées au system_prompt sélectionné
+                    if system_prompt_save_button:
+                        # print("save edited system_prompt")
+                        new_system_prompt_name = st.session_state.get('new_system_prompt_name')
+                        new_system_prompt_content = st.session_state.get('new_system_prompt_content')
+                        new_system_prompt_visibility = st.session_state.get('new_system_prompt_visibility')
+                        new_system_prompt_description = st.session_state.get('new_system_prompt_description')
+                        
+                        # print(new_system_prompt_name)
+
+                        if new_system_prompt_name.strip() and new_system_prompt_content.strip():
+                                
+                            # Mettre à jour la table
+                            query = """
+                                UPDATE `OCR.prompt_gpt`
+                                SET type='system_prompt', name = @new_system_prompt_name, content = @new_system_prompt_content, visibility = @new_system_prompt_visibility, description = @new_system_prompt_description
+                                WHERE name = @selected_system_prompt_name AND user = @username
+                            """
+                            params = [
+                                bigquery.ScalarQueryParameter('new_system_prompt_name', 'STRING', new_system_prompt_name),
+                                bigquery.ScalarQueryParameter('new_system_prompt_content', 'STRING', new_system_prompt_content),
+                                bigquery.ScalarQueryParameter('new_system_prompt_visibility', 'STRING', new_system_prompt_visibility),
+                                bigquery.ScalarQueryParameter('new_system_prompt_description', 'STRING', new_system_prompt_description),
+                                bigquery.ScalarQueryParameter('selected_system_prompt_name', 'STRING', selected_system_prompt_name),
+                                bigquery.ScalarQueryParameter('username', 'STRING', username),
+                            ]
+                            job_config = bigquery.QueryJobConfig()
+                            job_config.query_parameters = params
+                            client.query(query, job_config=job_config)
+                            
+                            # print("mise à jour de selected_system_prompt")
+        
+                            st.session_state['system_prompt_editing'] = False
+                            with st.spinner('Mise à jour des données...'):
+                                time.sleep(temps_d_attente)
+                            st.experimental_rerun()
+
+
+        ########################################################################################
+
+        # Ajouter un bouton "Supprimer" seulement s'il y a au moins deux system_prompts et si on est le créateur du system_prompt
+        if len(rows) > 1 and selected_system_prompt_user != "":
+            if st.button('Supprimer ce system_prompt (n\'oubliez pas de cocher la confirmation)', key='delete_system_prompt'):
+                st.session_state['system_prompt_confirm_delete'] = True  # Change this to True
+
+        # Si le bouton "Supprimer" a été cliqué, afficher une case à cocher pour la confirmation
+        if st.session_state.get('system_prompt_confirm_delete', False): # (false : valeur par défaut)
+            confirm = st.checkbox('Confirmer la suppression', key='system_prompt_confirm_delete_checkbox')
+            if confirm:
+
+                # Supprimer le system_prompt sélectionné de la table
+                query = """
+                    DELETE FROM `OCR.prompt_gpt`
+                    WHERE name = @selected_system_prompt_name AND user = @username AND type='system_prompt'
+                """
+                params = [
+                    bigquery.ScalarQueryParameter('selected_system_prompt_name', 'STRING', selected_system_prompt_name),
+                    bigquery.ScalarQueryParameter('username', 'STRING', username),
+                ]
+                job_config = bigquery.QueryJobConfig()
+                job_config.query_parameters = params
+                client.query(query, job_config=job_config)
+
+                # se rappeler que la case à cocher de confirmation doit etre masquée
+                st.session_state['system_prompt_confirm_delete'] = False
+                with st.spinner('Mise à jour des données...'):
+                    time.sleep(temps_d_attente)
+                st.experimental_rerun() 
+            
+
+        ########################################################################################
+        if st.button('Créer un nouveau system_prompt à partir de celui-là', key="add_new_system_prompt"):
             #ce drapeau editing est utilisé pour qu'au rechargement de la page, le formulaire d'édition soit affiché
-            st.session_state['system_prompt_editing'] = True
+            st.session_state['form_new_system_prompt'] = True
 
-        if st.session_state.get('system_prompt_editing', False):  #false = valeur par défaut
-            # print("ouverture du formulaire d'édition du system_prompt sélectionné")
+        if st.session_state.get('form_new_system_prompt', False):
 
-            with st.form(key='edit_form_system_prompt'):
+            with st.form(key='system_prompt_new_form'):
 
                 # Ajouter un bouton "Enregistrer"
-                system_prompt_save_button = st.form_submit_button('Enregistrer les modifications')
+                save_button_new_system_prompt = st.form_submit_button('Enregistrer ce nouveau system_prompt')
 
                 # Ajouter un bouton "Annuler"
-                system_prompt_cancel_button = st.form_submit_button('Fermer le formulaire sans enregistrer les modifications')
+                cancel_button_new_system_prompt = st.form_submit_button('Annuler la création du nouveau system_prompt')
 
+            # Ajouter un nouveau nom de system_prompt (par défaut celui du system_prompt sélectionné, pour simplifier la duplication)
+                selected_system_prompt_name = selected_system_prompt_name + " [copie " + username + "]"
                 # Ajouter un nouveau nom de system_prompt
-                st.session_state['new_system_prompt_name'] = st.text_input('Modifier le nom du system_prompt', value=selected_system_prompt['name'], key='edit_system_prompt_name')
+                st.session_state['new_system_prompt_name'] = st.text_input('nom du system_prompt', value=selected_system_prompt['name'], key='edit_new_system_prompt_name')
 
                 #ajouter un choix de visibilité (public ou privé)
-                st.session_state['new_system_prompt_visibility'] = st.radio("Visibilité du system_prompt", ("public", "private"), key='edit_modify_system_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_system_prompt['visibility']))
+                st.session_state['new_system_prompt_visibility'] = st.radio("Visibilité du system_prompt", ("public", "private"), key='edit_new_system_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_system_prompt['visibility']))
 
                 #ajouter une description du system_prompt
                 st.session_state['new_system_prompt_description'] = st.text_area('Description du system_prompt', value=selected_system_prompt['description'], key='edit_system_prompt_description',height=500)
@@ -309,161 +407,54 @@ else:
             
                 ########################################################################################
 
-                if system_prompt_cancel_button:
-                    # print("cancel edited system_prompt")
-                    st.session_state['system_prompt_editing'] = False
+                if cancel_button_new_system_prompt:
+                    st.session_state['form_new_system_prompt'] = False
                     st.experimental_rerun()
 
-                # Sauvegarder les modifications apportées au system_prompt sélectionné
-                if system_prompt_save_button:
-                    # print("save edited system_prompt")
+                # Sauvegarder le nouveau system_prompt
+                if save_button_new_system_prompt:
                     new_system_prompt_name = st.session_state.get('new_system_prompt_name')
                     new_system_prompt_content = st.session_state.get('new_system_prompt_content')
                     new_system_prompt_visibility = st.session_state.get('new_system_prompt_visibility')
                     new_system_prompt_description = st.session_state.get('new_system_prompt_description')
-                    
                     # print(new_system_prompt_name)
 
-                    if new_system_prompt_name.strip() and new_system_prompt_content.strip():
-                            
-                        # Mettre à jour la table
+                    # Vérifier si une entrée avec le même name et user existe déjà
+                    query = """
+                        SELECT * FROM `OCR.prompt_gpt`
+                        WHERE name = @new_system_prompt_name AND type='system_prompt'
+                    """
+                    params = [
+                        bigquery.ScalarQueryParameter('new_system_prompt_name', 'STRING', new_system_prompt_name),                    
+                    ]
+                    job_config = bigquery.QueryJobConfig()
+                    job_config.query_parameters = params
+                    
+                    results = client.query(query, job_config=job_config)
+                    rows = list(results.result())
+                    existing_entry = rows[0] if rows else None
+
+                    if new_system_prompt_name.strip() and new_system_prompt_content.strip() and not existing_entry:
+                    
                         query = """
-                            UPDATE `OCR.prompt_gpt`
-                            SET type='system_prompt', name = @new_system_prompt_name, content = @new_system_prompt_content, visibility = @new_system_prompt_visibility, description = @new_system_prompt_description
-                            WHERE name = @selected_system_prompt_name AND user = @username
+                            INSERT INTO `test-big-query-janv-2019.OCR.prompt_gpt` (name, content, user, visibility, description,type)
+                            VALUES (@new_system_prompt_name, @new_system_prompt_content, @username, @new_system_prompt_visibility, @new_system_prompt_description,'system_prompt')
                         """
                         params = [
                             bigquery.ScalarQueryParameter('new_system_prompt_name', 'STRING', new_system_prompt_name),
                             bigquery.ScalarQueryParameter('new_system_prompt_content', 'STRING', new_system_prompt_content),
+                            bigquery.ScalarQueryParameter('username', 'STRING', username),
                             bigquery.ScalarQueryParameter('new_system_prompt_visibility', 'STRING', new_system_prompt_visibility),
                             bigquery.ScalarQueryParameter('new_system_prompt_description', 'STRING', new_system_prompt_description),
-                            bigquery.ScalarQueryParameter('selected_system_prompt_name', 'STRING', selected_system_prompt_name),
-                            bigquery.ScalarQueryParameter('username', 'STRING', username),
                         ]
                         job_config = bigquery.QueryJobConfig()
                         job_config.query_parameters = params
                         client.query(query, job_config=job_config)
-                        
-                        # print("mise à jour de selected_system_prompt")
-      
-                        st.session_state['system_prompt_editing'] = False
+
+                        st.session_state['form_new_system_prompt'] = False
                         with st.spinner('Mise à jour des données...'):
                             time.sleep(temps_d_attente)
-                        st.experimental_rerun()
-
-
-    ########################################################################################
-
-    # Ajouter un bouton "Supprimer" seulement s'il y a au moins deux system_prompts et si on est le créateur du system_prompt
-    if len(rows) > 1 and selected_system_prompt_user != "":
-        if st.button('Supprimer ce system_prompt (n\'oubliez pas de cocher la confirmation)', key='delete_system_prompt'):
-            st.session_state['system_prompt_confirm_delete'] = True  # Change this to True
-
-    # Si le bouton "Supprimer" a été cliqué, afficher une case à cocher pour la confirmation
-    if st.session_state.get('system_prompt_confirm_delete', False): # (false : valeur par défaut)
-        confirm = st.checkbox('Confirmer la suppression', key='system_prompt_confirm_delete_checkbox')
-        if confirm:
-
-            # Supprimer le system_prompt sélectionné de la table
-            query = """
-                DELETE FROM `OCR.prompt_gpt`
-                WHERE name = @selected_system_prompt_name AND user = @username AND type='system_prompt'
-            """
-            params = [
-                bigquery.ScalarQueryParameter('selected_system_prompt_name', 'STRING', selected_system_prompt_name),
-                bigquery.ScalarQueryParameter('username', 'STRING', username),
-            ]
-            job_config = bigquery.QueryJobConfig()
-            job_config.query_parameters = params
-            client.query(query, job_config=job_config)
-
-            # se rappeler que la case à cocher de confirmation doit etre masquée
-            st.session_state['system_prompt_confirm_delete'] = False
-            with st.spinner('Mise à jour des données...'):
-                time.sleep(temps_d_attente)
-            st.experimental_rerun() 
-        
-
-    ########################################################################################
-    if st.button('Créer un nouveau system_prompt à partir de celui-là', key="add_new_system_prompt"):
-        #ce drapeau editing est utilisé pour qu'au rechargement de la page, le formulaire d'édition soit affiché
-        st.session_state['form_new_system_prompt'] = True
-
-    if st.session_state.get('form_new_system_prompt', False):
-
-        with st.form(key='system_prompt_new_form'):
-
-            # Ajouter un bouton "Enregistrer"
-            save_button_new_system_prompt = st.form_submit_button('Enregistrer ce nouveau system_prompt')
-
-            # Ajouter un bouton "Annuler"
-            cancel_button_new_system_prompt = st.form_submit_button('Annuler la création du nouveau system_prompt')
-
-           # Ajouter un nouveau nom de system_prompt (par défaut celui du system_prompt sélectionné, pour simplifier la duplication)
-            selected_system_prompt_name = selected_system_prompt_name + " [copie " + username + "]"
-            # Ajouter un nouveau nom de system_prompt
-            st.session_state['new_system_prompt_name'] = st.text_input('nom du system_prompt', value=selected_system_prompt['name'], key='edit_new_system_prompt_name')
-
-            #ajouter un choix de visibilité (public ou privé)
-            st.session_state['new_system_prompt_visibility'] = st.radio("Visibilité du system_prompt", ("public", "private"), key='edit_new_system_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_system_prompt['visibility']))
-
-            #ajouter une description du system_prompt
-            st.session_state['new_system_prompt_description'] = st.text_area('Description du system_prompt', value=selected_system_prompt['description'], key='edit_system_prompt_description',height=500)
-            
-            # Ajouter un nouveau contenu de system_prompt
-            st.session_state['new_system_prompt_content'] = st.text_area('Modifier le system_prompt', value=selected_system_prompt['content'], key='edit_system_prompt_content', height=500)
-
-           
-            ########################################################################################
-
-            if cancel_button_new_system_prompt:
-                st.session_state['form_new_system_prompt'] = False
-                st.experimental_rerun()
-
-            # Sauvegarder le nouveau system_prompt
-            if save_button_new_system_prompt:
-                new_system_prompt_name = st.session_state.get('new_system_prompt_name')
-                new_system_prompt_content = st.session_state.get('new_system_prompt_content')
-                new_system_prompt_visibility = st.session_state.get('new_system_prompt_visibility')
-                new_system_prompt_description = st.session_state.get('new_system_prompt_description')
-                # print(new_system_prompt_name)
-
-                # Vérifier si une entrée avec le même name et user existe déjà
-                query = """
-                    SELECT * FROM `OCR.prompt_gpt`
-                    WHERE name = @new_system_prompt_name AND type='system_prompt'
-                """
-                params = [
-                    bigquery.ScalarQueryParameter('new_system_prompt_name', 'STRING', new_system_prompt_name),                    
-                ]
-                job_config = bigquery.QueryJobConfig()
-                job_config.query_parameters = params
-                
-                results = client.query(query, job_config=job_config)
-                rows = list(results.result())
-                existing_entry = rows[0] if rows else None
-
-                if new_system_prompt_name.strip() and new_system_prompt_content.strip() and not existing_entry:
-                
-                    query = """
-                        INSERT INTO `test-big-query-janv-2019.OCR.prompt_gpt` (name, content, user, visibility, description,type)
-                        VALUES (@new_system_prompt_name, @new_system_prompt_content, @username, @new_system_prompt_visibility, @new_system_prompt_description,'system_prompt')
-                    """
-                    params = [
-                        bigquery.ScalarQueryParameter('new_system_prompt_name', 'STRING', new_system_prompt_name),
-                        bigquery.ScalarQueryParameter('new_system_prompt_content', 'STRING', new_system_prompt_content),
-                        bigquery.ScalarQueryParameter('username', 'STRING', username),
-                        bigquery.ScalarQueryParameter('new_system_prompt_visibility', 'STRING', new_system_prompt_visibility),
-                        bigquery.ScalarQueryParameter('new_system_prompt_description', 'STRING', new_system_prompt_description),
-                    ]
-                    job_config = bigquery.QueryJobConfig()
-                    job_config.query_parameters = params
-                    client.query(query, job_config=job_config)
-
-                    st.session_state['form_new_system_prompt'] = False
-                    with st.spinner('Mise à jour des données...'):
-                        time.sleep(temps_d_attente)
-                    st.experimental_rerun() #forcer le rechargement de la page pour masquer le formulaire de création de system_prompt
+                        st.experimental_rerun() #forcer le rechargement de la page pour masquer le formulaire de création de system_prompt
 
 
 
@@ -496,51 +487,168 @@ else:
     selected_user_prompt_description = selected_user_prompt['description']
     selected_user_prompt_visibility = selected_user_prompt['visibility']
 
-    if selected_user_prompt_user != username:
-        st.write("Ce user_prompt est en lecture seule, vous pouvez cliquer sur 'créer un nouveau user_prompt' pour en faire une copie éditable.")
-    else:
-        st.write("Créé par : ", selected_user_prompt_user)
-
-    st.write("Visibilité : ", selected_user_prompt_visibility)
-
-    if selected_user_prompt_description is not None:
-        selected_user_prompt_description = html.escape(selected_user_prompt_description)
-    st.markdown("Description du user_prompt sélectionné dans la liste:")
-    st.markdown(f'<div class="user_prompt" style="white-space: pre-wrap; margin-bottom:20px">{selected_user_prompt_description}</div>', unsafe_allow_html=True)
-
-
-    # Remplacer les caractères < et > par leurs entités HTML correspondantes
+        # Remplacer les caractères < et > par leurs entités HTML correspondantes
     selected_user_prompt_content = selected_user_prompt_content.replace('<', '&lt;').replace('>', '&gt;')
     # Remplacer \n par <br/> dans selected_user_prompt_content
     selected_user_prompt_content = selected_user_prompt_content.replace('\n', '<br/>')
 
     # Afficher le contenu du user_prompt sélectionné dans une zone de texte    
-    st.markdown("Contenu du user_prompt sélectionné dans la liste:")
     st.markdown(f'<div class="user_prompt">{selected_user_prompt_content}</div>', unsafe_allow_html=True)
-    st.markdown("---")
 
-    ########################################################################################
-    # Ajouter un bouton "Modifier le user_prompt"
-    if selected_user_prompt_user == username: #seul le créateur du user_prompt peut le modifier
-        if st.button('Modifier ce user_prompt', key='edit_above_user_prompt'):
+
+    if 'show_user_prompt' not in st.session_state:
+        st.session_state['show_user_prompt'] = False
+
+    if st.button('Affiche/Masque les détails', key='edit_user_prompt'):
+        # Inverse l'état d'affichage lorsque le bouton est cliqué
+        st.session_state['show_user_prompt'] = not st.session_state['show_user_prompt']
+
+    if st.session_state['show_user_prompt']:
+        if selected_user_prompt_user != username:
+            st.write("Ce user_prompt est en lecture seule, vous pouvez cliquer sur 'créer un nouveau user_prompt' pour en faire une copie éditable.")
+        else:
+            st.write("Créé par : ", selected_user_prompt_user)
+
+        st.write("Visibilité : ", selected_user_prompt_visibility)
+
+        if selected_user_prompt_description is not None:
+            selected_user_prompt_description = html.escape(selected_user_prompt_description)
+        st.markdown("Description du user_prompt:")
+        st.markdown(f'<div class="user_prompt" style="white-space: pre-wrap; margin-bottom:20px">{selected_user_prompt_description}</div>', unsafe_allow_html=True)
+
+
+
+
+        ########################################################################################
+        # Ajouter un bouton "Modifier le user_prompt"
+        if selected_user_prompt_user == username: #seul le créateur du user_prompt peut le modifier
+            if st.button('Modifier ce user_prompt', key='edit_above_user_prompt'):
+                #ce drapeau editing est utilisé pour qu'au rechargement de la page, le formulaire d'édition soit affiché
+                st.session_state['user_prompt_editing'] = True
+
+            if st.session_state.get('user_prompt_editing', False):  #false = valeur par défaut
+                # print("ouverture du formulaire d'édition du user_prompt sélectionné")
+
+                with st.form(key='edit_form_user_prompt'):
+
+                    # Ajouter un bouton "Enregistrer"
+                    user_prompt_save_button = st.form_submit_button('Enregistrer les modifications')
+
+                    # Ajouter un bouton "Annuler"
+                    user_prompt_cancel_button = st.form_submit_button('Fermer le formulaire sans enregistrer les modifications')
+                    # Ajouter un nouveau nom de user_prompt
+                    st.session_state['new_user_prompt_name'] = st.text_input('Modifier le nom du user_prompt', value=selected_user_prompt['name'], key='edit_user_prompt_name')
+
+                    #ajouter un choix de visibilité (public ou privé)
+                    st.session_state['new_user_prompt_visibility'] = st.radio("Visibilité du user_prompt", ("public", "private"), key='edit_modify_user_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_user_prompt['visibility']))
+
+                    #ajouter une description du user_prompt
+                    st.session_state['new_user_prompt_description'] = st.text_area('Description du user_prompt', value=selected_user_prompt['description'], key='edit_user_prompt_description',height=500)
+                    
+                    # Ajouter un nouveau contenu de user_prompt
+                    st.session_state['new_user_prompt_content'] = st.text_area('Modifier le user_prompt', value=selected_user_prompt['content'], key='edit_user_prompt_content', height=500)
+
+                
+                    ########################################################################################
+
+                    if user_prompt_cancel_button:
+                        # print("cancel edited user_prompt")
+                        st.session_state['user_prompt_editing'] = False
+                        st.experimental_rerun()
+
+                    # Sauvegarder les modifications apportées au user_prompt sélectionné
+                    if user_prompt_save_button:
+                        # print("save edited user_prompt")
+                        new_user_prompt_name = st.session_state.get('new_user_prompt_name')
+                        new_user_prompt_content = st.session_state.get('new_user_prompt_content')
+                        new_user_prompt_visibility = st.session_state.get('new_user_prompt_visibility')
+                        new_user_prompt_description = st.session_state.get('new_user_prompt_description')
+                        
+                        # print(new_user_prompt_name)
+
+                        if new_user_prompt_name.strip() and new_user_prompt_content.strip():
+                                
+                            # Mettre à jour la table
+                            query = """
+                                UPDATE `OCR.prompt_gpt`
+                                SET type='user_prompt', name = @new_user_prompt_name, content = @new_user_prompt_content, visibility = @new_user_prompt_visibility, description = @new_user_prompt_description
+                                WHERE name = @selected_user_prompt_name AND user = @username
+                            """
+                            params = [
+                                bigquery.ScalarQueryParameter('new_user_prompt_name', 'STRING', new_user_prompt_name),
+                                bigquery.ScalarQueryParameter('new_user_prompt_content', 'STRING', new_user_prompt_content),
+                                bigquery.ScalarQueryParameter('new_user_prompt_visibility', 'STRING', new_user_prompt_visibility),
+                                bigquery.ScalarQueryParameter('new_user_prompt_description', 'STRING', new_user_prompt_description),
+                                bigquery.ScalarQueryParameter('selected_user_prompt_name', 'STRING', selected_user_prompt_name),
+                                bigquery.ScalarQueryParameter('username', 'STRING', username),
+                            ]
+                            job_config = bigquery.QueryJobConfig()
+                            job_config.query_parameters = params
+                            client.query(query, job_config=job_config)
+                            
+                            # print("mise à jour de selected_user_prompt")
+        
+                            st.session_state['user_prompt_editing'] = False
+                            with st.spinner('Mise à jour des données...'):
+                                time.sleep(temps_d_attente)
+                            st.experimental_rerun()
+
+
+        ########################################################################################
+
+        # Ajouter un bouton "Supprimer" seulement s'il y a au moins deux user_prompts et si on est le créateur du user_prompt
+        if len(rows) > 1 and selected_user_prompt_user != "":
+            if st.button('Supprimer ce user_prompt (n\'oubliez pas de cocher la confirmation)', key='delete_user_prompt'):
+                st.session_state['user_prompt_confirm_delete'] = True  # Change this to True
+
+        # Si le bouton "Supprimer" a été cliqué, afficher une case à cocher pour la confirmation
+        if st.session_state.get('user_prompt_confirm_delete', False): # (false : valeur par défaut)
+            user_prompt_confirm = st.checkbox('Confirmer la suppression', key='user_prompt_confirm_delete_checkbox')
+            if user_prompt_confirm:
+
+                # Supprimer le user_prompt sélectionné de la table
+                query = """
+                    DELETE FROM `OCR.prompt_gpt`
+                    WHERE name = @selected_user_prompt_name AND user = @username AND type='user_prompt'
+                """
+                params = [
+                    bigquery.ScalarQueryParameter('selected_user_prompt_name', 'STRING', selected_user_prompt_name),
+                    bigquery.ScalarQueryParameter('username', 'STRING', username),
+                ]
+                job_config = bigquery.QueryJobConfig()
+                job_config.query_parameters = params
+                client.query(query, job_config=job_config)
+
+                # se rappeler que la case à cocher de confirmation doit etre masquée
+                st.session_state['user_prompt_confirm_delete'] = False
+                with st.spinner('Mise à jour des données...'):
+                    time.sleep(temps_d_attente)
+                st.experimental_rerun() 
+            
+
+        ########################################################################################
+        if st.button('Créer un nouveau user_prompt à partir de celui-là', key="add_new_user_prompt"):
             #ce drapeau editing est utilisé pour qu'au rechargement de la page, le formulaire d'édition soit affiché
-            st.session_state['user_prompt_editing'] = True
+            st.session_state['form_new_user_prompt'] = True
 
-        if st.session_state.get('user_prompt_editing', False):  #false = valeur par défaut
-            # print("ouverture du formulaire d'édition du user_prompt sélectionné")
+        if st.session_state.get('form_new_user_prompt', False):
 
-            with st.form(key='edit_form_user_prompt'):
+            with st.form(key='user_prompt_new_form'):
 
                 # Ajouter un bouton "Enregistrer"
-                user_prompt_save_button = st.form_submit_button('Enregistrer les modifications')
+                save_button_new_user_prompt = st.form_submit_button('Enregistrer ce nouveau user_prompt')
 
                 # Ajouter un bouton "Annuler"
-                user_prompt_cancel_button = st.form_submit_button('Fermer le formulaire sans enregistrer les modifications')
+                cancel_button_new_user_prompt = st.form_submit_button('Annuler la création du nouveau user_prompt')
+
+            # Ajouter un nouveau nom de user_prompt (par défaut celui du user_prompt sélectionné, pour simplifier la duplication)
+                selected_user_prompt_name = selected_user_prompt_name + " [copie " + username + "]"
                 # Ajouter un nouveau nom de user_prompt
-                st.session_state['new_user_prompt_name'] = st.text_input('Modifier le nom du user_prompt', value=selected_user_prompt['name'], key='edit_user_prompt_name')
+                st.session_state['new_user_prompt_name'] = st.text_input('nom du user_prompt', value=selected_user_prompt['name'], key='edit_new_user_prompt_name')
+
 
                 #ajouter un choix de visibilité (public ou privé)
-                st.session_state['new_user_prompt_visibility'] = st.radio("Visibilité du user_prompt", ("public", "private"), key='edit_modify_user_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_user_prompt['visibility']))
+                st.session_state['new_user_prompt_visibility'] = st.radio("Visibilité du user_prompt", ("public", "private"), key='edit_new_user_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_user_prompt['visibility']))
 
                 #ajouter une description du user_prompt
                 st.session_state['new_user_prompt_description'] = st.text_area('Description du user_prompt', value=selected_user_prompt['description'], key='edit_user_prompt_description',height=500)
@@ -551,175 +659,67 @@ else:
             
                 ########################################################################################
 
-                if user_prompt_cancel_button:
-                    # print("cancel edited user_prompt")
-                    st.session_state['user_prompt_editing'] = False
+                if cancel_button_new_user_prompt:
+                    st.session_state['form_new_user_prompt'] = False
                     st.experimental_rerun()
 
-                # Sauvegarder les modifications apportées au user_prompt sélectionné
-                if user_prompt_save_button:
-                    # print("save edited user_prompt")
+                # Sauvegarder le nouveau user_prompt
+                if save_button_new_user_prompt:
                     new_user_prompt_name = st.session_state.get('new_user_prompt_name')
                     new_user_prompt_content = st.session_state.get('new_user_prompt_content')
                     new_user_prompt_visibility = st.session_state.get('new_user_prompt_visibility')
                     new_user_prompt_description = st.session_state.get('new_user_prompt_description')
-                    
                     # print(new_user_prompt_name)
 
-                    if new_user_prompt_name.strip() and new_user_prompt_content.strip():
-                            
-                        # Mettre à jour la table
+                    # Vérifier si une entrée avec le même name et user existe déjà
+                    query = """
+                        SELECT * FROM `OCR.prompt_gpt`
+                        WHERE name = @new_user_prompt_name AND type='user_prompt'
+                    """
+                    params = [
+                        bigquery.ScalarQueryParameter('new_user_prompt_name', 'STRING', new_user_prompt_name),                    
+                    ]
+                    job_config = bigquery.QueryJobConfig()
+                    job_config.query_parameters = params
+                    
+                    results = client.query(query, job_config=job_config)
+                    rows = list(results.result())
+                    existing_entry = rows[0] if rows else None
+
+                    if new_user_prompt_name.strip() and new_user_prompt_content.strip() and not existing_entry:
+                    
+                        # # Ajouter le nouveau user_prompt à la liste des user_prompts
+                        # data.append({'name': new_user_prompt_name, 'content': new_user_prompt_content})
+
+                        # # Sauvegarder les données dans le fichier JSON
+                        # with open('user_prompts.json', 'w') as f:
+                        #     json.dump(data, f)
+
                         query = """
-                            UPDATE `OCR.prompt_gpt`
-                            SET type='user_prompt', name = @new_user_prompt_name, content = @new_user_prompt_content, visibility = @new_user_prompt_visibility, description = @new_user_prompt_description
-                            WHERE name = @selected_user_prompt_name AND user = @username
+                            INSERT INTO `test-big-query-janv-2019.OCR.prompt_gpt` (name, content, user, visibility, description,type)
+                            VALUES (@new_user_prompt_name, @new_user_prompt_content, @username, @new_user_prompt_visibility, @new_user_prompt_description,'user_prompt')
                         """
                         params = [
                             bigquery.ScalarQueryParameter('new_user_prompt_name', 'STRING', new_user_prompt_name),
                             bigquery.ScalarQueryParameter('new_user_prompt_content', 'STRING', new_user_prompt_content),
+                            bigquery.ScalarQueryParameter('username', 'STRING', username),
                             bigquery.ScalarQueryParameter('new_user_prompt_visibility', 'STRING', new_user_prompt_visibility),
                             bigquery.ScalarQueryParameter('new_user_prompt_description', 'STRING', new_user_prompt_description),
-                            bigquery.ScalarQueryParameter('selected_user_prompt_name', 'STRING', selected_user_prompt_name),
-                            bigquery.ScalarQueryParameter('username', 'STRING', username),
                         ]
                         job_config = bigquery.QueryJobConfig()
                         job_config.query_parameters = params
                         client.query(query, job_config=job_config)
-                        
-                        # print("mise à jour de selected_user_prompt")
-      
-                        st.session_state['user_prompt_editing'] = False
+
+                        st.session_state['form_new_user_prompt'] = False
                         with st.spinner('Mise à jour des données...'):
                             time.sleep(temps_d_attente)
-                        st.experimental_rerun()
-
-
-    ########################################################################################
-
-    # Ajouter un bouton "Supprimer" seulement s'il y a au moins deux user_prompts et si on est le créateur du user_prompt
-    if len(rows) > 1 and selected_user_prompt_user != "":
-        if st.button('Supprimer ce user_prompt (n\'oubliez pas de cocher la confirmation)', key='delete_user_prompt'):
-            st.session_state['user_prompt_confirm_delete'] = True  # Change this to True
-
-    # Si le bouton "Supprimer" a été cliqué, afficher une case à cocher pour la confirmation
-    if st.session_state.get('user_prompt_confirm_delete', False): # (false : valeur par défaut)
-        user_prompt_confirm = st.checkbox('Confirmer la suppression', key='user_prompt_confirm_delete_checkbox')
-        if user_prompt_confirm:
-
-            # Supprimer le user_prompt sélectionné de la table
-            query = """
-                DELETE FROM `OCR.prompt_gpt`
-                WHERE name = @selected_user_prompt_name AND user = @username AND type='user_prompt'
-            """
-            params = [
-                bigquery.ScalarQueryParameter('selected_user_prompt_name', 'STRING', selected_user_prompt_name),
-                bigquery.ScalarQueryParameter('username', 'STRING', username),
-            ]
-            job_config = bigquery.QueryJobConfig()
-            job_config.query_parameters = params
-            client.query(query, job_config=job_config)
-
-            # se rappeler que la case à cocher de confirmation doit etre masquée
-            st.session_state['user_prompt_confirm_delete'] = False
-            with st.spinner('Mise à jour des données...'):
-                time.sleep(temps_d_attente)
-            st.experimental_rerun() 
-        
-
-    ########################################################################################
-    if st.button('Créer un nouveau user_prompt à partir de celui-là', key="add_new_user_prompt"):
-        #ce drapeau editing est utilisé pour qu'au rechargement de la page, le formulaire d'édition soit affiché
-        st.session_state['form_new_user_prompt'] = True
-
-    if st.session_state.get('form_new_user_prompt', False):
-
-        with st.form(key='user_prompt_new_form'):
-
-            # Ajouter un bouton "Enregistrer"
-            save_button_new_user_prompt = st.form_submit_button('Enregistrer ce nouveau user_prompt')
-
-            # Ajouter un bouton "Annuler"
-            cancel_button_new_user_prompt = st.form_submit_button('Annuler la création du nouveau user_prompt')
-
-           # Ajouter un nouveau nom de user_prompt (par défaut celui du user_prompt sélectionné, pour simplifier la duplication)
-            selected_user_prompt_name = selected_user_prompt_name + " [copie " + username + "]"
-            # Ajouter un nouveau nom de user_prompt
-            st.session_state['new_user_prompt_name'] = st.text_input('nom du user_prompt', value=selected_user_prompt['name'], key='edit_new_user_prompt_name')
-
-
-            #ajouter un choix de visibilité (public ou privé)
-            st.session_state['new_user_prompt_visibility'] = st.radio("Visibilité du user_prompt", ("public", "private"), key='edit_new_user_prompt_visibility',label_visibility='hidden', index=("public", "private").index(selected_user_prompt['visibility']))
-
-            #ajouter une description du user_prompt
-            st.session_state['new_user_prompt_description'] = st.text_area('Description du user_prompt', value=selected_user_prompt['description'], key='edit_user_prompt_description',height=500)
-            
-            # Ajouter un nouveau contenu de user_prompt
-            st.session_state['new_user_prompt_content'] = st.text_area('Modifier le user_prompt', value=selected_user_prompt['content'], key='edit_user_prompt_content', height=500)
-
-           
-            ########################################################################################
-
-            if cancel_button_new_user_prompt:
-                st.session_state['form_new_user_prompt'] = False
-                st.experimental_rerun()
-
-            # Sauvegarder le nouveau user_prompt
-            if save_button_new_user_prompt:
-                new_user_prompt_name = st.session_state.get('new_user_prompt_name')
-                new_user_prompt_content = st.session_state.get('new_user_prompt_content')
-                new_user_prompt_visibility = st.session_state.get('new_user_prompt_visibility')
-                new_user_prompt_description = st.session_state.get('new_user_prompt_description')
-                # print(new_user_prompt_name)
-
-                # Vérifier si une entrée avec le même name et user existe déjà
-                query = """
-                    SELECT * FROM `OCR.prompt_gpt`
-                    WHERE name = @new_user_prompt_name AND type='user_prompt'
-                """
-                params = [
-                    bigquery.ScalarQueryParameter('new_user_prompt_name', 'STRING', new_user_prompt_name),                    
-                ]
-                job_config = bigquery.QueryJobConfig()
-                job_config.query_parameters = params
-                
-                results = client.query(query, job_config=job_config)
-                rows = list(results.result())
-                existing_entry = rows[0] if rows else None
-
-                if new_user_prompt_name.strip() and new_user_prompt_content.strip() and not existing_entry:
-                
-                    # # Ajouter le nouveau user_prompt à la liste des user_prompts
-                    # data.append({'name': new_user_prompt_name, 'content': new_user_prompt_content})
-
-                    # # Sauvegarder les données dans le fichier JSON
-                    # with open('user_prompts.json', 'w') as f:
-                    #     json.dump(data, f)
-
-                    query = """
-                        INSERT INTO `test-big-query-janv-2019.OCR.prompt_gpt` (name, content, user, visibility, description,type)
-                        VALUES (@new_user_prompt_name, @new_user_prompt_content, @username, @new_user_prompt_visibility, @new_user_prompt_description,'user_prompt')
-                    """
-                    params = [
-                        bigquery.ScalarQueryParameter('new_user_prompt_name', 'STRING', new_user_prompt_name),
-                        bigquery.ScalarQueryParameter('new_user_prompt_content', 'STRING', new_user_prompt_content),
-                        bigquery.ScalarQueryParameter('username', 'STRING', username),
-                        bigquery.ScalarQueryParameter('new_user_prompt_visibility', 'STRING', new_user_prompt_visibility),
-                        bigquery.ScalarQueryParameter('new_user_prompt_description', 'STRING', new_user_prompt_description),
-                    ]
-                    job_config = bigquery.QueryJobConfig()
-                    job_config.query_parameters = params
-                    client.query(query, job_config=job_config)
-
-                    st.session_state['form_new_user_prompt'] = False
-                    with st.spinner('Mise à jour des données...'):
-                        time.sleep(temps_d_attente)
-                    st.experimental_rerun() #forcer le rechargement de la page pour masquer le formulaire de création de user_prompt
+                        st.experimental_rerun() #forcer le rechargement de la page pour masquer le formulaire de création de user_prompt
 
 
 
     # user_content = st.text_area('Entrez le contenu du rôle utilisateur ici', value=consigne)
 
-    if st.button('Lancer le traitement par GPT'):
+    if st.button('Lancer le traitement par GPT', type='primary'):
         #on vient juste d'appuyer sur le bouton : on corrige le texte avec GPT  
             # Utilise GPT-3 pour corriger le texte lu par google vision
 
